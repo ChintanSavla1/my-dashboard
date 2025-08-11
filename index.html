@@ -1,71 +1,284 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Google Sheet Dashboard</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; padding: 20px; }
-    h1 { text-align: center; margin-bottom: 20px; }
-    table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px;
-            overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    th, td { padding: 10px 14px; text-align: left; white-space: nowrap; }
-    thead { background: #0073e6; color: white; position: sticky; top: 0; z-index: 2; }
-    tr:nth-child(even) { background: #f9f9f9; }
-    .hidden-col { display: none; }
-    .positive { color: green; font-weight: bold; }
-    .negative { color: red; font-weight: bold; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dispersion Live Execution Dashboard</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  /* Reset & base */
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0; background: #0e1327; color: #e1e8ff; font-family: 'Inter', sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column;
+  }
+  header {
+    background: #111a3c;
+    padding: 1rem 2rem;
+    font-weight: 600;
+    font-size: 1.5rem;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #61dafb;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  }
+  main {
+    flex: 1;
+    padding: 1rem 2rem;
+    max-width: 1200px;
+    margin: auto;
+  }
+  /* Table styling */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    background: #1a2247;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  thead {
+    background: #27326e;
+  }
+  thead th {
+    padding: 12px 15px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-align: left;
+    border-bottom: 2px solid #61dafb;
+  }
+  tbody tr {
+    border-bottom: 1px solid #2f3a80;
+    transition: background 0.3s ease;
+    cursor: default;
+  }
+  tbody tr:hover {
+    background: #334080;
+  }
+  tbody td {
+    padding: 10px 15px;
+    font-size: 0.85rem;
+    color: #cbd5f7;
+  }
+  /* Chart container */
+  #charts {
+    display: flex;
+    gap: 2rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .chart-box {
+    background: #1a2247;
+    padding: 1rem;
+    border-radius: 8px;
+    flex: 1 1 400px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    height: 300px;
+  }
+  .chart-box h2 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    color: #61dafb;
+  }
+  /* Loading & error */
+  #loading {
+    margin-top: 3rem;
+    font-size: 1.1rem;
+    text-align: center;
+    color: #999;
+  }
+  #error {
+    margin-top: 3rem;
+    text-align: center;
+    color: #ff6b6b;
+    font-weight: 600;
+  }
+  /* Responsive */
+  @media (max-width: 600px) {
+    header {
+      font-size: 1.2rem;
+      padding: 1rem;
+    }
+    main {
+      padding: 1rem;
+    }
+    #charts {
+      flex-direction: column;
+    }
+  }
+</style>
 </head>
 <body>
-
-<h1>📊 Google Sheet Dashboard</h1>
-<table id="data-table">
-  <thead></thead>
-  <tbody></tbody>
-</table>
+<header>Dispersion Live Execution Dashboard</header>
+<main>
+  <div id="loading">Loading data...</div>
+  <div id="error" style="display:none;"></div>
+  
+  <table id="data-table" style="display:none;">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+  
+  <div id="charts" style="display:none;">
+    <div class="chart-box">
+      <h2>Sample Chart: Quantity</h2>
+      <canvas id="quantityChart"></canvas>
+    </div>
+    <div class="chart-box">
+      <h2>Sample Chart: Premium</h2>
+      <canvas id="premiumChart"></canvas>
+    </div>
+  </div>
+</main>
 
 <script>
-  const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQDPMIywdqFHz_Yf7JhBRDGWftu1f4-XXukZ9dYDsVM3BBx-HSDnbdBS3fI1Ur2qE9UYAkC9E-7FNcd/pubhtml?gid=27552965&single=true";
+  // Google Sheets CSV URL (your published CSV link)
+  const sheetCSVUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQDPMIywdqFHz_Yf7JhBRDGWftu1f4-XXukZ9dYDsVM3BBx-HSDnbdBS3fI1Ur2qE9UYAkC9E-7FNcd/pub?output=csv&gid=27552965';
 
-  fetch(sheetURL)
-    .then(res => res.text())
-    .then(csvText => {
-      const rows = csvText.trim().split("\n").map(row => row.split(","));
-      const thead = document.querySelector("#data-table thead");
-      const tbody = document.querySelector("#data-table tbody");
+  // Helper: parse CSV text to array of objects
+  function parseCSV(csvText) {
+    const lines = csvText.trim().split('\n');
+    const headers = lines[0].split(',');
+    return lines.slice(1).map(line => {
+      const values = line.split(',');
+      const obj = {};
+      headers.forEach((header, i) => obj[header.trim()] = values[i]?.trim() || '');
+      return obj;
+    });
+  }
 
-      // Build header row
-      let headerHTML = "<tr>";
-      rows[0].forEach((col, i) => {
-        headerHTML += `<th class="${i < 3 ? 'hidden-col' : ''}">${col}</th>`;
+  // Render Table
+  function renderTable(data) {
+    const table = document.getElementById('data-table');
+    const thead = table.querySelector('thead');
+    const tbody = table.querySelector('tbody');
+
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
+
+    // Header row
+    const headerRow = document.createElement('tr');
+    Object.keys(data[0]).forEach(key => {
+      const th = document.createElement('th');
+      th.textContent = key;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+
+    // Data rows
+    data.forEach(row => {
+      const tr = document.createElement('tr');
+      Object.values(row).forEach(val => {
+        const td = document.createElement('td');
+        td.textContent = val;
+        tr.appendChild(td);
       });
-      headerHTML += "</tr>";
-      thead.innerHTML = headerHTML;
+      tbody.appendChild(tr);
+    });
 
-      // Build table body
-      for (let r = 1; r < rows.length; r++) {
-        let rowHTML = "<tr>";
-        rows[r].forEach((cell, i) => {
-          let displayCell = cell;
-          if (i === 6 && !isNaN(cell) && cell.trim() !== "") {
-            displayCell = cell >= 0
-              ? `📈 <span class="positive">${cell}</span>`
-              : `📉 <span class="negative">${cell}</span>`;
-          }
-          if (i === 10) {
-            displayCell = cell.toLowerCase().includes("yes")
-              ? `✅ ${cell}` : `❌ ${cell}`;
-          }
-          rowHTML += `<td class="${i < 3 ? 'hidden-col' : ''}">${displayCell}</td>`;
-        });
-        rowHTML += "</tr>";
-        tbody.innerHTML += rowHTML;
+    table.style.display = 'table';
+  }
+
+  // Render Charts
+  function renderCharts(data) {
+    document.getElementById('charts').style.display = 'flex';
+
+    // Prepare data for charts — use first 15 rows or less
+    const slice = data.slice(0, 15);
+    // Use columns you want to chart — adjust as per your sheet's actual column names
+    // Here, I picked 'Quantity' and 'Premium' as example numeric columns. Change if needed.
+    const labels = slice.map((row, i) => row['Symbol'] || `Row ${i+1}`);
+    const quantityData = slice.map(row => Number(row['Quantity'] || 0));
+    const premiumData = slice.map(row => Number(row['Premium'] || 0));
+
+    // Quantity Bar Chart
+    const ctxQuantity = document.getElementById('quantityChart').getContext('2d');
+    new Chart(ctxQuantity, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Quantity',
+          data: quantityData,
+          backgroundColor: '#61dafb88',
+          borderColor: '#61dafb',
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        scales: {
+          y: { beginAtZero: true, ticks: { color: '#61dafb' }},
+          x: { ticks: { color: '#a3b1ff' } }
+        },
+        plugins: {
+          legend: { labels: { color: '#61dafb' } }
+        },
+        responsive: true,
+        maintainAspectRatio: false
       }
-    })
-    .catch(err => console.error("Error loading sheet:", err));
-</script>
+    });
 
+    // Premium Line Chart
+    const ctxPremium = document.getElementById('premiumChart').getContext('2d');
+    new Chart(ctxPremium, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Premium',
+          data: premiumData,
+          borderColor: '#ff7f50',
+          backgroundColor: 'rgba(255,127,80,0.3)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 3
+        }]
+      },
+      options: {
+        scales: {
+          y: { beginAtZero: false, ticks: { color: '#ff7f50' }},
+          x: { ticks: { color: '#a3b1ff' } }
+        },
+        plugins: {
+          legend: { labels: { color: '#ff7f50' } }
+        },
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+  }
+
+  // Fetch CSV & update UI
+  async function loadData() {
+    try {
+      const res = await fetch(sheetCSVUrl);
+      if (!res.ok) throw new Error('Failed to fetch data');
+      const csvText = await res.text();
+      const data = parseCSV(csvText);
+
+      if (data.length === 0) throw new Error('No data found');
+
+      document.getElementById('loading').style.display = 'none';
+      renderTable(data);
+      renderCharts(data);
+    } catch (err) {
+      document.getElementById('loading').style.display = 'none';
+      const errDiv = document.getElementById('error');
+      errDiv.textContent = 'Error loading data: ' + err.message;
+      errDiv.style.display = 'block';
+    }
+  }
+
+  // Initialize
+  loadData();
+</script>
 </body>
 </html>
-
