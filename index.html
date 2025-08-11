@@ -3,186 +3,48 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dispersion Live Execution Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<title>Dashboard with Merged Headers</title>
 <style>
-  /* Same styling as before */
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: #0e1327; color: #e1e8ff; font-family: 'Inter', sans-serif;
-    min-height: 100vh; display: flex; flex-direction: column;
-  }
-  header {
-    background: #111a3c; padding: 1rem 2rem;
-    font-weight: 600; font-size: 1.5rem; letter-spacing: 1.2px;
-    text-transform: uppercase; color: #61dafb;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-  }
-  main {
-    flex: 1; padding: 1rem 2rem; max-width: 1200px; margin: auto;
-  }
-  table {
-    width: 100%; border-collapse: collapse; margin-top: 1rem;
-    background: #1a2247; border-radius: 8px; overflow: hidden;
-  }
-  thead {
-    background: #27326e;
-  }
-  thead th {
-    padding: 12px 15px; font-weight: 600; font-size: 0.9rem; text-align: left;
-    border-bottom: 2px solid #61dafb;
-  }
-  tbody tr {
-    border-bottom: 1px solid #2f3a80;
-    transition: background 0.3s ease;
-    cursor: default;
-  }
-  tbody tr:hover {
-    background: #334080;
-  }
-  tbody td {
-    padding: 10px 15px; font-size: 0.85rem; color: #cbd5f7;
-  }
-  #charts {
-    display: flex; gap: 2rem; margin-top: 2rem; flex-wrap: wrap;
-    justify-content: space-between;
-  }
-  .chart-box {
-    background: #1a2247; padding: 1rem; border-radius: 8px;
-    flex: 1 1 400px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); height: 300px;
-  }
-  .chart-box h2 {
-    font-weight: 600; margin-bottom: 1rem; font-size: 1.1rem; color: #61dafb;
-  }
-  #loading {
-    margin-top: 3rem; font-size: 1.1rem; text-align: center; color: #999;
-  }
-  #error {
-    margin-top: 3rem; text-align: center; color: #ff6b6b; font-weight: 600;
-  }
-  @media (max-width: 600px) {
-    header { font-size: 1.2rem; padding: 1rem; }
-    main { padding: 1rem; }
-    #charts { flex-direction: column; }
-  }
+  table { border-collapse: collapse; width: 100%; background: #1a2247; color: #e1e8ff; }
+  th, td { border: 1px solid #334080; padding: 8px 12px; }
+  th { background: #27326e; }
 </style>
 </head>
 <body>
-<header>Dispersion Live Execution Dashboard</header>
-<main>
-  <div id="loading">Loading data...</div>
-  <div id="error" style="display:none;"></div>
-
-  <table id="data-table" style="display:none;">
-    <thead></thead>
-    <tbody></tbody>
-  </table>
-
-  <div id="charts" style="display:none;">
-    <div class="chart-box">
-      <h2>Quantity</h2>
-      <canvas id="quantityChart"></canvas>
-    </div>
-    <div class="chart-box">
-      <h2>Premium</h2>
-      <canvas id="premiumChart"></canvas>
-    </div>
-  </div>
-</main>
+<table id="data-table">
+  <thead>
+    <tr>
+      <th rowspan="2">Symbol</th>
+      <th colspan="2">Execution Details</th>
+      <th rowspan="2">Premium</th>
+      <th rowspan="2">Quantity</th>
+    </tr>
+    <tr>
+      <th>Action</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
 
 <script>
-  const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQDPMIywdqFHz_Yf7JhBRDGWftu1f4-XXukZ9dYDsVM3BBx-HSDnbdBS3fI1Ur2qE9UYAkC9E-7FNcd/pub?output=csv&gid=27552965';
+  // Example data, replace with your actual CSV parsed data
+  const data = [
+    { Symbol: 'RELIANCE', Action: 'Buy', Date: '2025-08-11', Premium: '120.5', Quantity: '100' },
+    { Symbol: 'TCS', Action: 'Sell', Date: '2025-08-10', Premium: '210.3', Quantity: '50' }
+  ];
 
-  function renderTable(data) {
-    const table = document.getElementById('data-table');
-    const thead = table.querySelector('thead');
-    const tbody = table.querySelector('tbody');
-    thead.innerHTML = '';
-    tbody.innerHTML = '';
-    if (data.length === 0) {
-      showError('No data found.');
-      return;
-    }
-    // Headers
-    const headerRow = document.createElement('tr');
-    Object.keys(data[0]).forEach(key => {
-      const th = document.createElement('th');
-      th.textContent = key;
-      headerRow.appendChild(th);
+  const tbody = document.querySelector('#data-table tbody');
+  data.forEach(row => {
+    const tr = document.createElement('tr');
+    ['Symbol', 'Action', 'Date', 'Premium', 'Quantity'].forEach(key => {
+      const td = document.createElement('td');
+      td.textContent = row[key] || '';
+      tr.appendChild(td);
     });
-    thead.appendChild(headerRow);
-
-    // Rows
-    data.forEach(row => {
-      const tr = document.createElement('tr');
-      Object.values(row).forEach(val => {
-        const td = document.createElement('td');
-        td.textContent = val;
-        tr.appendChild(td);
-      });
-      tbody.appendChild(tr);
-    });
-    table.style.display = 'table';
-  }
-
-  function renderCharts(data) {
-    document.getElementById('charts').style.display = 'flex';
-    const slice = data.slice(0, 15);
-    const labels = slice.map(r => r['Symbol'] || 'N/A');
-    const quantityData = slice.map(r => Number(r['Quantity']) || 0);
-    const premiumData = slice.map(r => Number(r['Premium']) || 0);
-
-    new Chart(document.getElementById('quantityChart').getContext('2d'), {
-      type: 'bar',
-      data: { labels, datasets: [{ label: 'Quantity', data: quantityData, backgroundColor: '#61dafb88', borderColor: '#61dafb', borderWidth: 1, borderRadius: 4 }] },
-      options: {
-        scales: { y: { beginAtZero: true, ticks: { color: '#61dafb' }}, x: { ticks: { color: '#a3b1ff' } } },
-        plugins: { legend: { labels: { color: '#61dafb' } } },
-        responsive: true, maintainAspectRatio: false
-      }
-    });
-
-    new Chart(document.getElementById('premiumChart').getContext('2d'), {
-      type: 'line',
-      data: { labels, datasets: [{ label: 'Premium', data: premiumData, borderColor: '#ff7f50', backgroundColor: 'rgba(255,127,80,0.3)', fill: true, tension: 0.3, pointRadius: 3 }] },
-      options: {
-        scales: { y: { beginAtZero: false, ticks: { color: '#ff7f50' }}, x: { ticks: { color: '#a3b1ff' } } },
-        plugins: { legend: { labels: { color: '#ff7f50' } } },
-        responsive: true, maintainAspectRatio: false
-      }
-    });
-  }
-
-  function showError(msg) {
-    document.getElementById('loading').style.display = 'none';
-    const err = document.getElementById('error');
-    err.textContent = msg;
-    err.style.display = 'block';
-  }
-
-  function loadData() {
-    Papa.parse(csvUrl, {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        document.getElementById('loading').style.display = 'none';
-        if(results.data.length === 0) {
-          showError('No data found.');
-          return;
-        }
-        renderTable(results.data);
-        renderCharts(results.data);
-      },
-      error: function(err) {
-        showError('Error loading data: ' + err.message);
-      }
-    });
-  }
-
-  window.addEventListener('DOMContentLoaded', loadData);
+    tbody.appendChild(tr);
+  });
 </script>
 </body>
 </html>
