@@ -9,47 +9,29 @@
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  /* Reset & base */
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
   body {
     margin: 0; background: #0e1327; color: #e1e8ff; font-family: 'Inter', sans-serif;
     min-height: 100vh; display: flex; flex-direction: column;
   }
   header {
-    background: #111a3c;
-    padding: 1rem 2rem;
-    font-weight: 600;
-    font-size: 1.5rem;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: #61dafb;
+    background: #111a3c; padding: 1rem 2rem;
+    font-weight: 600; font-size: 1.5rem; letter-spacing: 1.2px;
+    text-transform: uppercase; color: #61dafb;
     box-shadow: 0 2px 5px rgba(0,0,0,0.5);
   }
   main {
-    flex: 1;
-    padding: 1rem 2rem;
-    max-width: 1200px;
-    margin: auto;
+    flex: 1; padding: 1rem 2rem; max-width: 1200px; margin: auto;
   }
-  /* Table styling */
   table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 1rem;
-    background: #1a2247;
-    border-radius: 8px;
-    overflow: hidden;
+    width: 100%; border-collapse: collapse; margin-top: 1rem;
+    background: #1a2247; border-radius: 8px; overflow: hidden;
   }
   thead {
     background: #27326e;
   }
   thead th {
-    padding: 12px 15px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    text-align: left;
+    padding: 12px 15px; font-weight: 600; font-size: 0.9rem; text-align: left;
     border-bottom: 2px solid #61dafb;
   }
   tbody tr {
@@ -61,57 +43,29 @@
     background: #334080;
   }
   tbody td {
-    padding: 10px 15px;
-    font-size: 0.85rem;
-    color: #cbd5f7;
+    padding: 10px 15px; font-size: 0.85rem; color: #cbd5f7;
   }
-  /* Chart container */
   #charts {
-    display: flex;
-    gap: 2rem;
-    margin-top: 2rem;
-    flex-wrap: wrap;
+    display: flex; gap: 2rem; margin-top: 2rem; flex-wrap: wrap;
     justify-content: space-between;
   }
   .chart-box {
-    background: #1a2247;
-    padding: 1rem;
-    border-radius: 8px;
-    flex: 1 1 400px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-    height: 300px;
+    background: #1a2247; padding: 1rem; border-radius: 8px;
+    flex: 1 1 400px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); height: 300px;
   }
   .chart-box h2 {
-    font-weight: 600;
-    margin-bottom: 1rem;
-    font-size: 1.1rem;
-    color: #61dafb;
+    font-weight: 600; margin-bottom: 1rem; font-size: 1.1rem; color: #61dafb;
   }
-  /* Loading & error */
   #loading {
-    margin-top: 3rem;
-    font-size: 1.1rem;
-    text-align: center;
-    color: #999;
+    margin-top: 3rem; font-size: 1.1rem; text-align: center; color: #999;
   }
   #error {
-    margin-top: 3rem;
-    text-align: center;
-    color: #ff6b6b;
-    font-weight: 600;
+    margin-top: 3rem; text-align: center; color: #ff6b6b; font-weight: 600;
   }
-  /* Responsive */
   @media (max-width: 600px) {
-    header {
-      font-size: 1.2rem;
-      padding: 1rem;
-    }
-    main {
-      padding: 1rem;
-    }
-    #charts {
-      flex-direction: column;
-    }
+    header { font-size: 1.2rem; padding: 1rem; }
+    main { padding: 1rem; }
+    #charts { flex-direction: column; }
   }
 </style>
 </head>
@@ -120,50 +74,44 @@
 <main>
   <div id="loading">Loading data...</div>
   <div id="error" style="display:none;"></div>
-  
+
   <table id="data-table" style="display:none;">
     <thead></thead>
     <tbody></tbody>
   </table>
-  
+
   <div id="charts" style="display:none;">
     <div class="chart-box">
-      <h2>Sample Chart: Quantity</h2>
+      <h2>Quantity</h2>
       <canvas id="quantityChart"></canvas>
     </div>
     <div class="chart-box">
-      <h2>Sample Chart: Premium</h2>
+      <h2>Premium</h2>
       <canvas id="premiumChart"></canvas>
     </div>
   </div>
 </main>
 
 <script>
-  // Google Sheets CSV URL (your published CSV link)
   const sheetCSVUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQDPMIywdqFHz_Yf7JhBRDGWftu1f4-XXukZ9dYDsVM3BBx-HSDnbdBS3fI1Ur2qE9UYAkC9E-7FNcd/pub?output=csv&gid=27552965';
 
-  // Helper: parse CSV text to array of objects
   function parseCSV(csvText) {
     const lines = csvText.trim().split('\n');
     const headers = lines[0].split(',');
     return lines.slice(1).map(line => {
       const values = line.split(',');
       const obj = {};
-      headers.forEach((header, i) => obj[header.trim()] = values[i]?.trim() || '');
+      headers.forEach((h,i) => obj[h.trim()] = values[i]?.trim() || '');
       return obj;
     });
   }
 
-  // Render Table
   function renderTable(data) {
     const table = document.getElementById('data-table');
     const thead = table.querySelector('thead');
     const tbody = table.querySelector('tbody');
-
     thead.innerHTML = '';
     tbody.innerHTML = '';
-
-    // Header row
     const headerRow = document.createElement('tr');
     Object.keys(data[0]).forEach(key => {
       const th = document.createElement('th');
@@ -171,8 +119,6 @@
       headerRow.appendChild(th);
     });
     thead.appendChild(headerRow);
-
-    // Data rows
     data.forEach(row => {
       const tr = document.createElement('tr');
       Object.values(row).forEach(val => {
@@ -182,90 +128,42 @@
       });
       tbody.appendChild(tr);
     });
-
     table.style.display = 'table';
   }
 
-  // Render Charts
   function renderCharts(data) {
     document.getElementById('charts').style.display = 'flex';
-
-    // Prepare data for charts — use first 15 rows or less
     const slice = data.slice(0, 15);
-    // Use columns you want to chart — adjust as per your sheet's actual column names
-    // Here, I picked 'Quantity' and 'Premium' as example numeric columns. Change if needed.
-    const labels = slice.map((row, i) => row['Symbol'] || `Row ${i+1}`);
-    const quantityData = slice.map(row => Number(row['Quantity'] || 0));
-    const premiumData = slice.map(row => Number(row['Premium'] || 0));
-
-    // Quantity Bar Chart
-    const ctxQuantity = document.getElementById('quantityChart').getContext('2d');
-    new Chart(ctxQuantity, {
+    const labels = slice.map(r => r['Symbol'] || 'N/A');
+    const quantityData = slice.map(r => Number(r['Quantity'] || 0));
+    const premiumData = slice.map(r => Number(r['Premium'] || 0));
+    new Chart(document.getElementById('quantityChart').getContext('2d'), {
       type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Quantity',
-          data: quantityData,
-          backgroundColor: '#61dafb88',
-          borderColor: '#61dafb',
-          borderWidth: 1,
-          borderRadius: 4
-        }]
-      },
+      data: { labels, datasets: [{ label: 'Quantity', data: quantityData, backgroundColor: '#61dafb88', borderColor: '#61dafb', borderWidth: 1, borderRadius: 4 }] },
       options: {
-        scales: {
-          y: { beginAtZero: true, ticks: { color: '#61dafb' }},
-          x: { ticks: { color: '#a3b1ff' } }
-        },
-        plugins: {
-          legend: { labels: { color: '#61dafb' } }
-        },
-        responsive: true,
-        maintainAspectRatio: false
+        scales: { y: { beginAtZero: true, ticks: { color: '#61dafb' }}, x: { ticks: { color: '#a3b1ff' } } },
+        plugins: { legend: { labels: { color: '#61dafb' } } },
+        responsive: true, maintainAspectRatio: false
       }
     });
-
-    // Premium Line Chart
-    const ctxPremium = document.getElementById('premiumChart').getContext('2d');
-    new Chart(ctxPremium, {
+    new Chart(document.getElementById('premiumChart').getContext('2d'), {
       type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Premium',
-          data: premiumData,
-          borderColor: '#ff7f50',
-          backgroundColor: 'rgba(255,127,80,0.3)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 3
-        }]
-      },
+      data: { labels, datasets: [{ label: 'Premium', data: premiumData, borderColor: '#ff7f50', backgroundColor: 'rgba(255,127,80,0.3)', fill: true, tension: 0.3, pointRadius: 3 }] },
       options: {
-        scales: {
-          y: { beginAtZero: false, ticks: { color: '#ff7f50' }},
-          x: { ticks: { color: '#a3b1ff' } }
-        },
-        plugins: {
-          legend: { labels: { color: '#ff7f50' } }
-        },
-        responsive: true,
-        maintainAspectRatio: false
+        scales: { y: { beginAtZero: false, ticks: { color: '#ff7f50' }}, x: { ticks: { color: '#a3b1ff' } } },
+        plugins: { legend: { labels: { color: '#ff7f50' } } },
+        responsive: true, maintainAspectRatio: false
       }
     });
   }
 
-  // Fetch CSV & update UI
   async function loadData() {
     try {
       const res = await fetch(sheetCSVUrl);
       if (!res.ok) throw new Error('Failed to fetch data');
       const csvText = await res.text();
       const data = parseCSV(csvText);
-
       if (data.length === 0) throw new Error('No data found');
-
       document.getElementById('loading').style.display = 'none';
       renderTable(data);
       renderCharts(data);
@@ -277,7 +175,6 @@
     }
   }
 
-  // Initialize
   loadData();
 </script>
 </body>
