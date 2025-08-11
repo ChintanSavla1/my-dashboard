@@ -3,37 +3,68 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Dashboard</title>
+  <title>Google Sheet Dashboard</title>
   <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f4f4f4;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    header {
-      background-color: #2d3436;
-      color: #fff;
-      padding: 1rem;
-      text-align: center;
-      font-size: 1.5rem;
-    }
-    iframe {
-      flex: 1;
-      width: 100%;
-      border: none;
-      display: block;
-    }
+    body { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; padding: 20px; }
+    h1 { text-align: center; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px;
+            overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    th, td { padding: 10px 14px; text-align: left; white-space: nowrap; }
+    thead { background: #0073e6; color: white; position: sticky; top: 0; z-index: 2; }
+    tr:nth-child(even) { background: #f9f9f9; }
+    .hidden-col { display: none; }
+    .positive { color: green; font-weight: bold; }
+    .negative { color: red; font-weight: bold; }
   </style>
 </head>
 <body>
-  <header>📊 My Google Sheet Dashboard</header>
 
-  <!-- Always-refresh iframe with cache-busting timestamp -->
-  <iframe
-    src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQDPMIywdqFHz_Yf7JhBRDGWftu1f4-XXukZ9dYDsVM3BBx-HSDnbdBS3fI1Ur2qE9UYAkC9E-7FNcd/pubhtml?gid=1170151686&single=true&t=<?=Date.now()?>"
-  ></iframe>
+<h1>📊 Google Sheet Dashboard</h1>
+<table id="data-table">
+  <thead></thead>
+  <tbody></tbody>
+</table>
+
+<script>
+  const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQDPMIywdqFHz_Yf7JhBRDGWftu1f4-XXukZ9dYDsVM3BBx-HSDnbdBS3fI1Ur2qE9UYAkC9E-7FNcd/pub?gid=1170151686&single=true&output=csv";
+
+  fetch(sheetURL)
+    .then(res => res.text())
+    .then(csvText => {
+      const rows = csvText.trim().split("\n").map(row => row.split(","));
+      const thead = document.querySelector("#data-table thead");
+      const tbody = document.querySelector("#data-table tbody");
+
+      // Build header row
+      let headerHTML = "<tr>";
+      rows[0].forEach((col, i) => {
+        headerHTML += `<th class="${i < 3 ? 'hidden-col' : ''}">${col}</th>`;
+      });
+      headerHTML += "</tr>";
+      thead.innerHTML = headerHTML;
+
+      // Build table body
+      for (let r = 1; r < rows.length; r++) {
+        let rowHTML = "<tr>";
+        rows[r].forEach((cell, i) => {
+          let displayCell = cell;
+          if (i === 6 && !isNaN(cell) && cell.trim() !== "") {
+            displayCell = cell >= 0
+              ? `📈 <span class="positive">${cell}</span>`
+              : `📉 <span class="negative">${cell}</span>`;
+          }
+          if (i === 10) {
+            displayCell = cell.toLowerCase().includes("yes")
+              ? `✅ ${cell}` : `❌ ${cell}`;
+          }
+          rowHTML += `<td class="${i < 3 ? 'hidden-col' : ''}">${displayCell}</td>`;
+        });
+        rowHTML += "</tr>";
+        tbody.innerHTML += rowHTML;
+      }
+    })
+    .catch(err => console.error("Error loading sheet:", err));
+</script>
+
 </body>
 </html>
