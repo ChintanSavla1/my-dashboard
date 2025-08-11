@@ -1,50 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dashboard with Merged Headers</title>
-<style>
-  table { border-collapse: collapse; width: 100%; background: #1a2247; color: #e1e8ff; }
-  th, td { border: 1px solid #334080; padding: 8px 12px; }
-  th { background: #27326e; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Dashboard</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #1a2247;
+      color: #e1e8ff;
+    }
+    th, td {
+      border: 1px solid #334080;
+      padding: 8px 12px;
+      text-align: center;
+    }
+    th {
+      background-color: #27326e;
+    }
+  </style>
 </head>
 <body>
-<table id="data-table">
-  <thead>
-    <tr>
-      <th rowspan="2">Symbol</th>
-      <th colspan="2">Execution Details</th>
-      <th rowspan="2">Premium</th>
-      <th rowspan="2">Quantity</th>
-    </tr>
-    <tr>
-      <th>Action</th>
-      <th>Date</th>
-    </tr>
-  </thead>
-  <tbody>
-  </tbody>
-</table>
 
-<script>
-  // Example data, replace with your actual CSV parsed data
-  const data = [
-    { Symbol: 'RELIANCE', Action: 'Buy', Date: '2025-08-11', Premium: '120.5', Quantity: '100' },
-    { Symbol: 'TCS', Action: 'Sell', Date: '2025-08-10', Premium: '210.3', Quantity: '50' }
-  ];
+  <table id="data-table">
+    <thead>
+      <tr>
+        <th rowspan="2">Symbol</th>
+        <th colspan="2">Execution Details</th>
+        <th rowspan="2">Premium</th>
+        <th rowspan="2">Quantity</th>
+      </tr>
+      <tr>
+        <th>Action</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data rows will be inserted here -->
+    </tbody>
+  </table>
 
-  const tbody = document.querySelector('#data-table tbody');
-  data.forEach(row => {
-    const tr = document.createElement('tr');
-    ['Symbol', 'Action', 'Date', 'Premium', 'Quantity'].forEach(key => {
-      const td = document.createElement('td');
-      td.textContent = row[key] || '';
-      tr.appendChild(td);
-    });
-    tbody.appendChild(tr);
-  });
-</script>
+  <script>
+    fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vQDPMIywdqFHz_Yf7JhBRDGWftu1f4-XXukZ9dYDsVM3BBx-HSDnbdBS3fI1Ur2qE9UYAkC9E-7FNcd/pub?output=csv&gid=27552965')
+      .then(response => response.text())
+      .then(csvText => {
+        const rows = csvText.split('\n').map(row => row.split(','));
+        const tbody = document.querySelector('#data-table tbody');
+        rows.forEach((row, index) => {
+          if (index > 0) { // Skip header row
+            const tr = document.createElement('tr');
+            row.forEach(cell => {
+              const td = document.createElement('td');
+              td.textContent = cell;
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          }
+        });
+      });
+  </script>
+
 </body>
 </html>
