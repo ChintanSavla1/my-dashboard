@@ -4,14 +4,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Dispersion Live Execution Dashboard</title>
-<!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- Tabletop.js to fetch Google Sheets -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.4/tabletop.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <style>
-  /* Same styles as before */
+  /* Same styling as before */
   * { box-sizing: border-box; }
   body {
     margin: 0; background: #0e1327; color: #e1e8ff; font-family: 'Inter', sans-serif;
@@ -96,9 +93,7 @@
 </main>
 
 <script>
-  // Your Google Sheet's "key" from the URL
-  // Extracted from your original link (the long string after /d/e/ and before /pub)
-  const publicSpreadsheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQDPMIywdqFHz_Yf7JhBRDGWftu1f4-XXukZ9dYDsVM3BBx-HSDnbdBS3fI1Ur2qE9UYAkC9E-7FNcd/pubhtml';
+  const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQDPMIywdqFHz_Yf7JhBRDGWftu1f4-XXukZ9dYDsVM3BBx-HSDnbdBS3fI1Ur2qE9UYAkC9E-7FNcd/pub?output=csv&gid=27552965';
 
   function renderTable(data) {
     const table = document.getElementById('data-table');
@@ -107,10 +102,10 @@
     thead.innerHTML = '';
     tbody.innerHTML = '';
     if (data.length === 0) {
-      document.getElementById('error').textContent = 'No data found in the sheet.';
-      document.getElementById('error').style.display = 'block';
+      showError('No data found.');
       return;
     }
+    // Headers
     const headerRow = document.createElement('tr');
     Object.keys(data[0]).forEach(key => {
       const th = document.createElement('th');
@@ -118,6 +113,8 @@
       headerRow.appendChild(th);
     });
     thead.appendChild(headerRow);
+
+    // Rows
     data.forEach(row => {
       const tr = document.createElement('tr');
       Object.values(row).forEach(val => {
@@ -132,7 +129,6 @@
 
   function renderCharts(data) {
     document.getElementById('charts').style.display = 'flex';
-
     const slice = data.slice(0, 15);
     const labels = slice.map(r => r['Symbol'] || 'N/A');
     const quantityData = slice.map(r => Number(r['Quantity']) || 0);
@@ -147,6 +143,7 @@
         responsive: true, maintainAspectRatio: false
       }
     });
+
     new Chart(document.getElementById('premiumChart').getContext('2d'), {
       type: 'line',
       data: { labels, datasets: [{ label: 'Premium', data: premiumData, borderColor: '#ff7f50', backgroundColor: 'rgba(255,127,80,0.3)', fill: true, tension: 0.3, pointRadius: 3 }] },
@@ -158,34 +155,34 @@
     });
   }
 
-  function showError(message) {
+  function showError(msg) {
     document.getElementById('loading').style.display = 'none';
-    const errDiv = document.getElementById('error');
-    errDiv.textContent = message;
-    errDiv.style.display = 'block';
+    const err = document.getElementById('error');
+    err.textContent = msg;
+    err.style.display = 'block';
   }
 
-  function init() {
-    Tabletop.init({
-      key: publicSpreadsheetUrl,
-      simpleSheet: true,
-      wanted: ["MainDashboard", "DispersionData"], // You can list multiple sheets if you want
-      callback: function(data, tabletop) {
+  function loadData() {
+    Papa.parse(csvUrl, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
         document.getElementById('loading').style.display = 'none';
-        if (!data || data.length === 0) {
-          showError('No data found in the sheet.');
+        if(results.data.length === 0) {
+          showError('No data found.');
           return;
         }
-        renderTable(data);
-        renderCharts(data);
+        renderTable(results.data);
+        renderCharts(results.data);
       },
       error: function(err) {
-        showError('Error loading data: ' + err);
+        showError('Error loading data: ' + err.message);
       }
     });
   }
 
-  window.addEventListener('DOMContentLoaded', init);
+  window.addEventListener('DOMContentLoaded', loadData);
 </script>
 </body>
 </html>
